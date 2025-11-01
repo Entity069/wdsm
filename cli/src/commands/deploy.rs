@@ -1,0 +1,83 @@
+use anyhow::{anyhow, Context, Result};
+use std::path::Path;
+
+pub async fn execute(config_path: &str) -> Result<()> {
+    println!("[i] Deploying function from: {}", config_path);
+
+    let config = parser::parse_cfg(config_path).context("Failed to parse config")?;
+
+    let config_file = Path::new(config_path);
+    let project_dir = config_file.parent().context("Invalid config path")?;
+
+    let wdsm_dir = project_dir.join(".wdsm");
+    std::fs::create_dir_all(&wdsm_dir).context("Failed to create .wdsm directory")?;
+
+    let js_file = project_dir.join(&config.entrypoint);
+    let wit_content = parser::gen_wit(&js_file, &config).context("Failed to generate WIT file")?;
+
+    let wit_file = wdsm_dir.join("interface.wit");
+    std::fs::write(&wit_file, wit_content).context("Failed to write WIT file")?;
+    
+    println!("[!] Generated WIT file: {}", wit_file.display());
+
+    let wasm_file = wdsm_dir.join("function.wasm");
+    compiler::componentize(&js_file, &wit_file, &wasm_file).context("Failed to compile to WASM")?;
+
+    println!("[i] Starting HTTP server...");
+    let deployment = server::deploy(config.clone(), wasm_file).await.context("Failed to start server")?;
+
+    // before registering, wait if the server is actually running
+    // need to make deployment atomic in order to avoid undeployed entries in registry
+    if let Err(e) = health_check(config.port, 3_000).await
+        .with_context(|| format!("Server on port {} did not become ready in time", config.port))
+    {
+        let _ = server::stop(&deployment.id).await;
+        return Err(e);
+    }
+
+    registry::register(deployment.clone()).context("[!] Failed to register deployment")?;
+
+    println!("Deployed!");
+    println!("Name: {}", config.name);
+    println!("Endpoint: http://127.0.0.1:{}{}", config.port, config.endpoint);
+    println!("\nPress Ctrl+C to stop the server.");
+
+    tokio::signal::ctrl_c().await.context("Failed to listen for Ctrl+C")?;
+
+    println!("[i] Clearing up registry files...");
+
+    server::stop(&deployment.id).await.context("Failed to stop server")?;
+
+    registry::unregister(&deployment.id).context("Failed to unregister deployment")?;
+
+    println!("[!] Stopped: {}", config.name);
+
+    Ok(())
+}
+
+async fn health_check(port: u16, timeout_ms: u64) -> Result<()> {
+    use std::time::{Duration, Instant};
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_millis(500))
+        .build().context("Failed to build HTTP client")?;
+
+    let url = format!("http://127.0.0.1:{}/__health", port);
+    let start = Instant::now();
+    let mut last_err: Option<anyhow::Error> = None;
+
+    while start.elapsed().as_millis() < timeout_ms as u128 {
+        match client.get(&url).send().await {
+            Ok(resp) if resp.status().is_success() => return Ok(()),
+            Ok(resp) => {
+                last_err = Some(anyhow!("health check {}", resp.status()));
+            }
+            Err(e) => {
+                last_err = Some(anyhow!(e));
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+
+    Err(last_err.unwrap_or_else(|| anyhow!("time out")))
+}
