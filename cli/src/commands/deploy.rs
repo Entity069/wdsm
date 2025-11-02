@@ -3,7 +3,6 @@ use jco::componentize;
 use std::path::Path;
 
 pub async fn execute(config_path: &str) -> Result<()> {
-    println!("[i] Deploying function from: {}", config_path);
 
     let config = parser::parse_cfg(config_path).context("Failed to parse config")?;
 
@@ -14,23 +13,21 @@ pub async fn execute(config_path: &str) -> Result<()> {
     std::fs::create_dir_all(&wdsm_dir).context("Failed to create .wdsm directory")?;
 
     let js_file = project_dir.join(&config.entrypoint);
-    let wit_content = parser::gen_wit(&js_file, &config).context("Failed to generate WIT file")?;
+    let wit_content = parser::gen_wit(&config).context("Failed to generate WIT file")?;
 
     let wit_file = wdsm_dir.join("interface.wit");
     std::fs::write(&wit_file, wit_content).context("Failed to write WIT file")?;
     
-    println!("[!] Generated WIT file: {}", wit_file.display());
 
     let wasm_file = wdsm_dir.join("function.wasm");
     componentize(&js_file, &wit_file, &wasm_file).context("Failed to compile to WASM")?;
 
-    println!("[i] Starting HTTP server...");
     let deployment = server::deploy(config.clone(), wasm_file).await.context("Failed to start server")?;
 
     // before registering, wait if the server is actually running
     // need to make deployment atomic in order to avoid undeployed entries in registry
     if let Err(e) = health_check(config.port, 3_000).await
-        .with_context(|| format!("Server on port {} did not become ready in time", config.port))
+        .with_context(|| format!("[i] Server on port {} did not become ready in time", config.port))
     {
         let _ = server::stop(&deployment.id).await;
         return Err(e);
@@ -38,20 +35,20 @@ pub async fn execute(config_path: &str) -> Result<()> {
 
     registry::register(deployment.clone()).context("[!] Failed to register deployment")?;
 
-    println!("Deployed!");
-    println!("Name: {}", config.name);
-    println!("Endpoint: http://127.0.0.1:{}{}", config.port, config.endpoint);
-    println!("\nPress Ctrl+C to stop the server.");
+    // println!("Deployed!");
+    // println!("Name: {}", config.name);
+    // println!("Endpoint: http://127.0.0.1:{}{}", config.port, config.endpoint);
+    // println!("\nPress Ctrl+C to stop the server.");
 
     tokio::signal::ctrl_c().await.context("Failed to listen for Ctrl+C")?;
 
-    println!("[i] Clearing up registry files...");
+    // println!("[i] Clearing up registry files...");
 
     server::stop(&deployment.id).await.context("Failed to stop server")?;
 
     registry::unregister(&deployment.id).context("Failed to unregister deployment")?;
 
-    println!("[!] Stopped: {}", config.name);
+    // println!("[!] Stopped: {}", config.name);
 
     Ok(())
 }
