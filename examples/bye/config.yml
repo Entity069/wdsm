@@ -1,0 +1,8 @@
+name: bye
+language: javascript
+entrypoint: bye.js
+entrypoint_function: bye
+port: 3001
+endpoint: /bye
+method: GET
+payload: name
