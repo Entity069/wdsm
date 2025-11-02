@@ -1,0 +1,24 @@
+[package]
+name = "server"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+tokio.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+
+wasmtime = { version = "26", features = ["component-model", "async"] }
+wasmtime-wasi = "26"
+wasmtime-wasi-http = "26"
+
+parser = { path = "../parser" }
+logger = { path = "../logger" }
+
+lazy_static = "1.4"
+
+[dependencies.registry]
+path = "../registry"
