@@ -1,0 +1,12 @@
+name: user
+language: typescript
+entrypoint: user.ts
+entrypoint_function: createUser
+port: 3002
+endpoint: /create-user
+method: POST
+payload:
+  - name: string
+  - email: string
+  - age: f64
+return_type: User

@@ -13,7 +13,7 @@ pub async fn execute(config_path: &str) -> Result<()> {
     std::fs::create_dir_all(&wdsm_dir).context("Failed to create .wdsm directory")?;
 
     let js_file = project_dir.join(&config.entrypoint);
-    let wit_content = parser::gen_wit(&config).context("Failed to generate WIT file")?;
+    let wit_content = parser::gen_wit(&config, project_dir).context("Failed to generate WIT file")?;
 
     let wit_file = wdsm_dir.join("interface.wit");
     std::fs::write(&wit_file, wit_content).context("Failed to write WIT file")?;
@@ -35,20 +35,11 @@ pub async fn execute(config_path: &str) -> Result<()> {
 
     registry::register(deployment.clone()).context("[!] Failed to register deployment")?;
 
-    // println!("Deployed!");
-    // println!("Name: {}", config.name);
-    // println!("Endpoint: http://127.0.0.1:{}{}", config.port, config.endpoint);
-    // println!("\nPress Ctrl+C to stop the server.");
-
     tokio::signal::ctrl_c().await.context("Failed to listen for Ctrl+C")?;
-
-    // println!("[i] Clearing up registry files...");
 
     server::stop(&deployment.id).await.context("Failed to stop server")?;
 
     registry::unregister(&deployment.id).context("Failed to unregister deployment")?;
-
-    // println!("[!] Stopped: {}", config.name);
 
     Ok(())
 }
