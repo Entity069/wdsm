@@ -1,8 +1,10 @@
 name: hello
 language: javascript
 entrypoint: hello.js
-entrypoint-function: hello
+entrypoint_function: hello
 port: 3001
 endpoint: /hello
 method: GET
-payload: name
+payload:
+  - name: string
+return_type: string

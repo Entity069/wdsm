@@ -1,0 +1,11 @@
+name: add
+language: javascript
+entrypoint: add.js
+entrypoint_function: add
+port: 3001
+endpoint: /add
+method: GET
+payload:
+  - a: f32
+  - b: f32
+return_type: f32
