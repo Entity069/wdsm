@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::fs;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -11,7 +12,8 @@ pub struct Config {
     pub port: u16,
     pub endpoint: String,
     pub method: String,
-    pub payload: String,
+    pub payload: Vec<HashMap<String, String>>,
+    pub return_type: String,
 }
 
 pub fn parse_cfg(path: &str) -> Result<Config> {
