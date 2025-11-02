@@ -2,7 +2,7 @@
 members = [
     "cli",
     "parser",
-    "compiler",
+    "jco",
     "server",
     "registry",
     "logger",

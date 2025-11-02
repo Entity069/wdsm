@@ -1,5 +1,5 @@
 [package]
-name = "compiler"
+name = "jco"
 version.workspace = true
 edition.workspace = true
 

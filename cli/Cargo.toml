@@ -14,7 +14,7 @@ tokio.workspace = true
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 
 parser = { path = "../parser" }
-compiler = { path = "../compiler" }
+jco = { path = "../jco" }
 server = { path = "../server" }
 registry = { path = "../registry" }
 logger = { path = "../logger" }

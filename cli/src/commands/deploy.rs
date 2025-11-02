@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use jco::componentize;
 use std::path::Path;
 
 pub async fn execute(config_path: &str) -> Result<()> {
@@ -21,7 +22,7 @@ pub async fn execute(config_path: &str) -> Result<()> {
     println!("[!] Generated WIT file: {}", wit_file.display());
 
     let wasm_file = wdsm_dir.join("function.wasm");
-    compiler::componentize(&js_file, &wit_file, &wasm_file).context("Failed to compile to WASM")?;
+    componentize(&js_file, &wit_file, &wasm_file).context("Failed to compile to WASM")?;
 
     println!("[i] Starting HTTP server...");
     let deployment = server::deploy(config.clone(), wasm_file).await.context("Failed to start server")?;

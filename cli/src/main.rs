@@ -17,6 +17,9 @@ enum Commands {
         #[arg(long)]
         config: String,
     },
+    Stop {
+        name: String,
+    },
     List,
 }
 
@@ -29,6 +32,9 @@ async fn main() -> Result<()> {
     match cli.command {
         Commands::Deploy { config } => {
             commands::deploy::execute(&config,).await?;
+        }
+        Commands::Stop { name } => {
+            commands::stop::execute(&name).await?;
         }
         Commands::List => {
             commands::list::execute().await?;
