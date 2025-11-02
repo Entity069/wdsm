@@ -1,0 +1,20 @@
+[package]
+name = "cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "wdsm"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap = { version = "4.4", features = ["derive"] }
+tokio.workspace = true
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+
+parser = { path = "../parser" }
+compiler = { path = "../compiler" }
+server = { path = "../server" }
+registry = { path = "../registry" }
+logger = { path = "../logger" }
