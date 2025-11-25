@@ -4,7 +4,7 @@ wdsm is a poor man's attempt to make a FaaS runtime via WASM Component Model. It
 
 ## Requirements
 
-- Rust toolchain (1.72+ recommended)
+- Rust
 - Node.js + npm (for `jco`)
 - `@bytecodealliance/jco` installed globally
 
