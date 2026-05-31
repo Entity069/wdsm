@@ -14,3 +14,6 @@ swc_ecma_visit = "17.0.0"
 wasmtime = { version = "26", features = ["component-model", "async"] }
 wasmtime-wasi = "26"
 wasmtime-wasi-http = "26"
+
+[dev-dependencies]
+tempfile = "3"
