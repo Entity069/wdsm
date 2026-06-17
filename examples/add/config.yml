@@ -1,6 +1,6 @@
 name: add
-language: javascript
-entrypoint: add.js
+language: typescript
+entrypoint: add.ts
 entrypoint_function: add
 port: 3001
 endpoint: /add
