@@ -79,10 +79,28 @@ fn validate_names(ir: &WitIR) -> Result<(), WdsmError> {
     for td in &ir.types {
         crate::errors::validate_wit_name(td.wit_name())?;
 
-        if let TypeDef::Record(rec) = td {
-            for field in &rec.fields {
-                crate::errors::validate_wit_name(&field.wit_name)?;
+        match td {
+            TypeDef::Record(rec) => {
+                for field in &rec.fields {
+                    crate::errors::validate_wit_name(&field.wit_name)?;
+                }
             }
+            TypeDef::Variant(var) => {
+                for case in &var.cases {
+                    crate::errors::validate_wit_name(&case.name)?;
+                }
+            }
+            TypeDef::Enum(enm) => {
+                for case in &enm.cases {
+                    crate::errors::validate_wit_name(case)?;
+                }
+            }
+            TypeDef::Flags(flags) => {
+                for flag in &flags.flags {
+                    crate::errors::validate_wit_name(flag)?;
+                }
+            }
+            TypeDef::Alias(_) => {}
         }
     }
 
