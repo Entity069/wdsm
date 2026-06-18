@@ -1621,6 +1621,7 @@ name = "parser"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "heck",
  "serde",
  "serde_yaml",
  "swc_common",

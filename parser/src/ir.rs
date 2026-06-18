@@ -1,5 +1,7 @@
 use std::fmt;
 
+use heck::ToKebabCase as _;
+
 #[derive(Debug, Clone)]
 pub struct WitIR {
     pub package: String,
@@ -301,18 +303,5 @@ pub enum Confidence {
 
 
 pub fn to_kebab_case(s: &str) -> String {
-    let mut result = String::with_capacity(s.len() + 4);
-
-    for c in s.chars() {
-        if c.is_uppercase() {
-            if !result.is_empty() {
-                result.push('-');
-            }
-            result.push(c.to_ascii_lowercase());
-        } else {
-            result.push(c);
-        }
-    }
-
-    result
+    s.to_kebab_case()
 }
