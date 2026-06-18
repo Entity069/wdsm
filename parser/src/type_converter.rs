@@ -1,7 +1,6 @@
 use anyhow::Result;
 use wasmtime::component::Val;
 
-// req -> wit
 pub fn parse_value(value_str: &str, type_str: &str) -> Result<Val> {
     match type_str {
         "string" | "str" => Ok(Val::String(value_str.to_string().into())),
@@ -38,7 +37,6 @@ pub fn parse_value(value_str: &str, type_str: &str) -> Result<Val> {
     }
 }
 
-// wit -> result
 pub fn format_result(val: &Val, return_type: &str) -> Result<String> {
     match (val, return_type) {
         (Val::String(s), _) => Ok(s.to_string()),
