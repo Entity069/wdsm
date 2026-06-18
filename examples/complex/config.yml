@@ -1,0 +1,13 @@
+name: complex
+method: POST
+language: typescript
+entrypoint: complex.ts
+entrypoint_function: processUsers
+
+payload:
+  - users: list
+  - requireActive: boolean
+
+return_type: string
+port: 3001
+endpoint: /complex

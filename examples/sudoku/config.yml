@@ -1,0 +1,12 @@
+name: sudoku
+method: GET
+language: typescript
+entrypoint: sudoku.ts
+entrypoint_function: solve
+
+payload:
+  - boardStr: string
+
+return_type: string
+port: 3002
+endpoint: /solve
