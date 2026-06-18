@@ -1623,6 +1623,7 @@ dependencies = [
  "anyhow",
  "heck",
  "serde",
+ "serde_json",
  "serde_yaml",
  "swc_common",
  "swc_ecma_ast",

@@ -7,6 +7,7 @@ edition.workspace = true
 anyhow.workspace = true
 heck = "0.5"
 serde.workspace = true
+serde_json.workspace = true
 serde_yaml.workspace = true
 swc_common = "16.0.0"
 swc_ecma_parser = "26.0.1"

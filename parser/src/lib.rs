@@ -14,7 +14,7 @@ pub use codegen::generate_wit;
 pub use validation::validate;
 
 pub use config::{Config, parse_cfg};
-pub use type_converter::{parse_value, format_result};
+pub use type_converter::{json_to_val, val_to_json};
 
 use anyhow::{Context, Result};
 use std::path::Path;
