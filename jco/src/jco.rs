@@ -47,12 +47,13 @@ pub fn componentize(js_file: &Path, wit_file: &Path, output_wasm: &Path) -> Resu
         .arg("--out")
         .arg(output_wasm)
         .arg(&js_to_compile)
-        .output()
-        .context("Failed to execute jco")?;
+        .output();
 
     if is_temp {
-        let _ = std::fs::remove_file(js_to_compile);
+        let _ = std::fs::remove_file(&js_to_compile);
     }
+
+    let output = output.context("Failed to execute jco")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
