@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 anyhow.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 serde_yaml.workspace = true
 swc_common = "16.0.0"
 swc_ecma_parser = "26.0.1"
