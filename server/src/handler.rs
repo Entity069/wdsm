@@ -151,13 +151,18 @@ async fn execute_wasm(
         param_values.push(val);
     }
 
-    let mut results = vec![Val::Bool(false)];
+    let result_types = func.results(&store);
+    let mut results = vec![Val::Bool(false); result_types.len()];
 
     func.call_async(&mut store, &param_values, &mut results).await?;
 
     // convert result to json
-    let result_json = parser::val_to_json(&results[0])
-        .map_err(|e| anyhow::anyhow!("Failed to serialize result: {:#}", e))?;
+    let result_json = if let Some(first_result) = results.first() {
+        parser::val_to_json(first_result)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize result: {:#}", e))?
+    } else {
+        Value::Null
+    };
 
     logger::log_request(
         &state.config.name,
