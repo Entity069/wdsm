@@ -29,7 +29,7 @@ fn extract_ir(ts_file: &Path, config: &FrontendConfig) -> Result<WitIR> {
     let src_name = ts_file.to_string_lossy().to_string();
 
     let cm: Lrc<SourceMap> = Default::default();
-    let fm = cm.new_source_file(FileName::Custom(src_name).into(), src_code.clone());
+    let fm = cm.new_source_file(FileName::Custom(src_name.clone()).into(), src_code.clone());
 
     let syntax = Syntax::Typescript(TsSyntax {
         tsx: false,
@@ -50,7 +50,7 @@ fn extract_ir(ts_file: &Path, config: &FrontendConfig) -> Result<WitIR> {
     });
 
     let mut visitor = IRExtractor::new(
-        src_code,
+        src_name,
         target_fn,
         cm,
     );
@@ -449,7 +449,16 @@ impl IRExtractor {
                                 let payload = self.map_ts_type(t).ok();
                                 let case_name = match &payload {
                                     Some(IRType::Named(n)) => to_kebab_case(n),
-                                    _ => "case".to_string(),
+                                    Some(other) => format!("{}-val", to_kebab_case(&other.to_wit_str())),
+                                    None => match &**t {
+                                        TsType::TsKeywordType(kw) => match kw.kind {
+                                            TsKeywordTypeKind::TsNullKeyword => "null".to_string(),
+                                            TsKeywordTypeKind::TsUndefinedKeyword => "undefined".to_string(),
+                                            TsKeywordTypeKind::TsVoidKeyword => "void".to_string(),
+                                            _ => "case".to_string(),
+                                        },
+                                        _ => "case".to_string(),
+                                    },
                                 };
                                 VariantCase {
                                     name: case_name,
@@ -647,7 +656,38 @@ impl IRExtractor {
                 {
                     ReturnType::None
                 }
-                other => ReturnType::Type(self.map_ts_type(other)?),
+                other => {
+                    if let TsType::TsTypeRef(type_ref) = other {
+                        if let TsEntityName::Ident(ident) = &type_ref.type_name {
+                            if ident.sym.to_string() == "Promise" {
+                                if let Some(type_params) = &type_ref.type_params {
+                                    if let Some(first) = type_params.params.first() {
+                                        if matches!(
+                                            &**first,
+                                            TsType::TsKeywordType(TsKeywordType {
+                                                kind: TsKeywordTypeKind::TsVoidKeyword,
+                                                ..
+                                            })
+                                        ) {
+                                            return Ok(FunctionDef {
+                                                wit_name: to_kebab_case(name),
+                                                name: name.to_string(),
+                                                params,
+                                                returns: ReturnType::None,
+                                                docs: None,
+                                                source: self.make_span(
+                                                    arrow.span(),
+                                                    Confidence::Explicit,
+                                                ),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ReturnType::Type(self.map_ts_type(other)?)
+                }
             }
         } else {
             ReturnType::None
