@@ -75,8 +75,6 @@ Supported basic types: `string|str`, `int|i32`, `i64`, `float|f32`, `f64`, `bool
 ## Limitations
 
 - very much limited
-- currently .wit files are not actually generated from the function code, but config files
-- scalar data types only
 - no WASI modules
 
 ## License
