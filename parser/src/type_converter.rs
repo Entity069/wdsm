@@ -11,12 +11,36 @@ pub fn json_to_val(json: &JsonValue, ty: &WasmType) -> Result<Val> {
             _ => bail!("expected bool, got {:?}", json),
         },
 
-        WasmType::S8 => Ok(Val::S8(json_to_i64(json)? as i8)),
-        WasmType::U8 => Ok(Val::U8(json_to_u64(json)? as u8)),
-        WasmType::S16 => Ok(Val::S16(json_to_i64(json)? as i16)),
-        WasmType::U16 => Ok(Val::U16(json_to_u64(json)? as u16)),
-        WasmType::S32 => Ok(Val::S32(json_to_i64(json)? as i32)),
-        WasmType::U32 => Ok(Val::U32(json_to_u64(json)? as u32)),
+        WasmType::S8 => {
+            let val = json_to_i64(json)?;
+            let casted = i8::try_from(val).context("value out of range for s8")?;
+            Ok(Val::S8(casted))
+        }
+        WasmType::U8 => {
+            let val = json_to_u64(json)?;
+            let casted = u8::try_from(val).context("value out of range for u8")?;
+            Ok(Val::U8(casted))
+        }
+        WasmType::S16 => {
+            let val = json_to_i64(json)?;
+            let casted = i16::try_from(val).context("value out of range for s16")?;
+            Ok(Val::S16(casted))
+        }
+        WasmType::U16 => {
+            let val = json_to_u64(json)?;
+            let casted = u16::try_from(val).context("value out of range for u16")?;
+            Ok(Val::U16(casted))
+        }
+        WasmType::S32 => {
+            let val = json_to_i64(json)?;
+            let casted = i32::try_from(val).context("value out of range for s32")?;
+            Ok(Val::S32(casted))
+        }
+        WasmType::U32 => {
+            let val = json_to_u64(json)?;
+            let casted = u32::try_from(val).context("value out of range for u32")?;
+            Ok(Val::U32(casted))
+        }
         WasmType::S64 => Ok(Val::S64(json_to_i64(json)?)),
         WasmType::U64 => Ok(Val::U64(json_to_u64(json)?)),
 
@@ -31,7 +55,11 @@ pub fn json_to_val(json: &JsonValue, ty: &WasmType) -> Result<Val> {
 
         WasmType::Char => {
             let s = json.as_str().context("expected string for char")?;
-            let c = s.chars().next().context("empty string for char")?;
+            let mut chars = s.chars();
+            let c = chars.next().context("empty string for char")?;
+            if chars.next().is_some() {
+                bail!("expected a single character string for char, got '{}'", s);
+            }
             Ok(Val::Char(c))
         }
 
