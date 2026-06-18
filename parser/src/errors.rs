@@ -40,6 +40,11 @@ pub enum WdsmError {
         param: String,
     },
 
+    DuplicateCase {
+        type_name: String,
+        case: String,
+    },
+
     UnresolvedType {
         name: String,
         ref_in: String,
@@ -111,6 +116,13 @@ impl fmt::Display for WdsmError {
                     f,
                     "duplicate parameter `{}` in function `{}`",
                     param, function
+                )
+            }
+            WdsmError::DuplicateCase { type_name, case } => {
+                write!(
+                    f,
+                    "duplicate case `{}` in type `{}`",
+                    case, type_name
                 )
             }
             WdsmError::UnresolvedType { name, ref_in, src_file, src_line } => {

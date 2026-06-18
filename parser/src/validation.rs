@@ -9,6 +9,8 @@ pub fn validate(ir: &mut WitIR) -> Result<Vec<String>, WdsmError> {
     check_unique_type(ir)?;
     check_unique_field(ir)?;
     check_unique_param(ir)?;
+    check_unique_variant_case(ir)?;
+    check_unique_enum_case(ir)?;
     validate_names(ir)?;
     check_refs(ir)?;
     toposort_ty(ir)?;
@@ -69,6 +71,40 @@ fn check_unique_param(ir: &WitIR) -> Result<(), WdsmError> {
                     function: func.name.clone(),
                     param: param.name.clone(),
                 });
+            }
+        }
+    }
+    Ok(())
+}
+
+fn check_unique_variant_case(ir: &WitIR) -> Result<(), WdsmError> {
+    for td in &ir.types {
+        if let TypeDef::Variant(var) = td {
+            let mut seen = HashSet::new();
+            for case in &var.cases {
+                if !seen.insert(&case.name) {
+                    return Err(WdsmError::DuplicateCase {
+                        type_name: var.name.clone(),
+                        case: case.name.clone(),
+                    });
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn check_unique_enum_case(ir: &WitIR) -> Result<(), WdsmError> {
+    for td in &ir.types {
+        if let TypeDef::Enum(enm) = td {
+            let mut seen = HashSet::new();
+            for case in &enm.cases {
+                if !seen.insert(case) {
+                    return Err(WdsmError::DuplicateCase {
+                        type_name: enm.name.clone(),
+                        case: case.clone(),
+                    });
+                }
             }
         }
     }
