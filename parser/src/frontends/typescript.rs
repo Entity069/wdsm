@@ -138,10 +138,11 @@ impl IRExtractor {
 
             TsType::TsUnionOrIntersectionType(union) => self.map_union_type(union),
 
-            TsType::TsTypeLit(_type_lit) => {
-                // TODO: give a name to inline type literals
-                Ok(IRType::Named("anonymous-record".to_string()))
+            TsType::TsTypeLit(_) => Err(WdsmError::UnsupportedType {
+                ty: "inline object type literal".to_string(),
+                suggestion: Some("use a named interface or type alias instead".to_string()),
             }
+            .into()),
 
             TsType::TsParenthesizedType(paren) => self.map_ts_type(&paren.type_ann),
 
@@ -162,7 +163,11 @@ impl IRExtractor {
             TsKeywordTypeKind::TsVoidKeyword |
             TsKeywordTypeKind::TsUndefinedKeyword |
             TsKeywordTypeKind::TsNullKeyword |
-            TsKeywordTypeKind::TsNeverKeyword => Ok(IRType::String),
+            TsKeywordTypeKind::TsNeverKeyword => Err(WdsmError::UnsupportedType {
+                ty: format!("{:?}", keyword.kind),
+                suggestion: Some("use string, number, boolean, or bigint".to_string()),
+            }
+            .into()),
             _ => Err(WdsmError::UnsupportedType {
                 ty: format!("{:?}", keyword.kind),
                 suggestion: Some("use string, number, boolean, or bigint".to_string()),
@@ -270,10 +275,18 @@ impl IRExtractor {
         });
 
         if all_strings {
-            return Ok(IRType::Named("inline-enum".to_string()));
+            return Err(WdsmError::UnsupportedType {
+                ty: "inline union of string literals".to_string(),
+                suggestion: Some("use a named type alias instead".to_string()),
+            }
+            .into());
         }
 
-        Ok(IRType::Named("inline-variant".to_string()))
+        Err(WdsmError::UnsupportedType {
+            ty: "inline union type".to_string(),
+            suggestion: Some("use a named type alias instead".to_string()),
+        }
+        .into())
     }
 
     fn interface_anal(&mut self, decl: &TsInterfaceDecl) {
@@ -287,7 +300,13 @@ impl IRExtractor {
                     let optional = prop.optional;
 
                     let field_type = if let Some(type_ann) = &prop.type_ann {
-                        self.map_ts_type(&type_ann.type_ann).unwrap_or(IRType::String)
+                        match self.map_ts_type(&type_ann.type_ann) {
+                            Ok(t) => t,
+                            Err(e) => {
+                                self.errors.push(e);
+                                IRType::String
+                            }
+                        }
                     } else {
                         IRType::String
                     };
@@ -332,7 +351,13 @@ impl IRExtractor {
                             let optional = prop.optional;
 
                             let field_type = if let Some(type_ann) = &prop.type_ann {
-                                self.map_ts_type(&type_ann.type_ann).unwrap_or(IRType::String)
+                                match self.map_ts_type(&type_ann.type_ann) {
+                                    Ok(t) => t,
+                                    Err(e) => {
+                                        self.errors.push(e);
+                                        IRType::String
+                                    }
+                                }
                             } else {
                                 IRType::String
                             };
@@ -509,6 +534,12 @@ impl IRExtractor {
                     name: param_name,
                     ty: param_type,
                 });
+            } else {
+                return Err(WdsmError::UnsupportedType {
+                    ty: "destructured or complex parameter pattern".to_string(),
+                    suggestion: Some("use a simple named parameter instead".to_string()),
+                }
+                .into());
             }
         }
 
@@ -595,6 +626,12 @@ impl IRExtractor {
                     name: param_name,
                     ty: param_type,
                 });
+            } else {
+                return Err(WdsmError::UnsupportedType {
+                    ty: "destructured or complex parameter pattern".to_string(),
+                    suggestion: Some("use a simple named parameter instead".to_string()),
+                }
+                .into());
             }
         }
 
@@ -738,7 +775,7 @@ mod tests {
         let config = FrontendConfig {
             package_name: "wdsm:test".to_string(),
             world_name: "test".to_string(),
-            target_fn: None,
+            target_functions: None,
         };
 
         extract_ir(tmp.path(), &config)
