@@ -1,23 +1,32 @@
-import urllib.request
-import urllib.error
+import http.client
+import encodings.idna
 
 class WitWorld:
     def net(self, msg: str, request_catcher: str) -> str:
-        target_url = request_catcher.strip()
-        if not target_url.startswith("http://") and not target_url.startswith("https://"):
-            target_url = f"https://{target_url}.requestcatcher.com/test"
+        target = request_catcher.strip()
+        if target.startswith("http://"):
+            target = target[7:]
+        elif target.startswith("https://"):
+            target = target[8:]
 
-        body = msg.encode("utf-8")
-        req = urllib.request.Request(
-            target_url,
-            data=body,
-            headers={"Content-Type": "text/plain"},
-            method="POST"
-        )
+        if "/" in target:
+            host, path = target.split("/", 1)
+            path = "/" + path
+        else:
+            host = f"{target}.requestcatcher.com" if "." not in target else target
+            path = "/test123"
+
         try:
-            with urllib.request.urlopen(req) as resp:
-                if resp.status < 200 or resp.status >= 300:
-                    return f"Failed with HTTP status {resp.status}"
-                return f"Successfully sent POST request to {target_url}"
+            conn = http.client.HTTPConnection(host, timeout=10)
+            headers = {"Content-Type": "text/plain"}
+            body = msg.encode("utf-8")
+            conn.request("POST", path, body=body, headers=headers)
+            resp = conn.getresponse()
+            status = resp.status
+            conn.close()
+
+            if status >= 200 and status < 400:
+                return f"Successfully sent POST request to http://{host}{path}"
+            return f"Failed with HTTP status {status}"
         except Exception as e:
             return f"Failed: {str(e)}"
