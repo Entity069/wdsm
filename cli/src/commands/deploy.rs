@@ -2,10 +2,17 @@ use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 
 pub async fn execute(config_path: &str) -> Result<()> {
-    let config = parser::parse_cfg(config_path).context("Failed to parse config")?;
+    let raw_path = Path::new(config_path);
+    let resolved_path = if raw_path.is_dir() {
+        raw_path.join("config.yml")
+    } else {
+        raw_path.to_path_buf()
+    };
+    let resolved_str = resolved_path.to_string_lossy();
 
-    let config_file = Path::new(config_path);
-    let project_dir = config_file.parent().context("Invalid config path")?;
+    let config = parser::parse_cfg(&resolved_str).context("Failed to parse config")?;
+
+    let project_dir = resolved_path.parent().context("Invalid config path")?;
 
     let wdsm_dir = project_dir.join(".wdsm");
     std::fs::create_dir_all(&wdsm_dir).context("Failed to create .wdsm directory")?;
