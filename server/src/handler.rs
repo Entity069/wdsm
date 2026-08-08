@@ -44,7 +44,7 @@ impl WasiHttpView for WasiState {
 }
 
 #[derive(Deserialize)]
-pub(crate) struct Params {
+pub struct Params {
     #[serde(flatten)]
     data: HashMap<String, String>,
 }
@@ -79,13 +79,17 @@ pub async fn handle_request(
     }
 }
 
-async fn execute_wasm(
+pub async fn execute_wasm(
     state: &ServerState,
     json_body: &Value,
 ) -> anyhow::Result<Value> {
     let wasi_ctx = WasiCtxBuilder::new()
         .inherit_stdio()
         .inherit_env()
+        .inherit_network()
+        .allow_ip_name_lookup(true)
+        .allow_tcp(true)
+        .allow_udp(true)
         .build();
 
     let http = WasiHttpCtx::new();
