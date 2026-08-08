@@ -109,7 +109,22 @@ async fn execute_wasm(
     let func_name = &state.config.entrypoint_function;
     let func = instance.get_func(&mut store, func_name)
         .or_else(|| instance.get_func(&mut store, &to_kebab(func_name)))
-        .ok_or_else(|| anyhow::anyhow!("Function {} not found", func_name))?;
+        .or_else(|| {
+            // Search exports inside exported interface instances if any
+            for (name, item) in instance.exports(&mut store) {
+                if let ComponentItem::ComponentInstance(inst) = item {
+                    if let Some(f) = inst.get_func(&mut store, func_name)
+                        .or_else(|| inst.get_func(&mut store, &to_kebab(func_name))) {
+                        return Some(f);
+                    }
+                }
+            }
+            None
+        })
+        .ok_or_else(|| {
+            let export_names: Vec<String> = instance.exports(&mut store).map(|(n, _)| n.to_string()).collect();
+            anyhow::anyhow!("Function {} not found. Available component exports: {:?}", func_name, export_names)
+        })?;
 
     // get parameter types from the wasm component
     let param_types: Box<[types::Type]> = func.params(&store);
