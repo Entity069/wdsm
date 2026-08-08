@@ -8,6 +8,6 @@ payload:
   - users: list
   - requireActive: boolean
 
-return_type: string
+return_type: ProcessSummary
 port: 3001
 endpoint: /complex
