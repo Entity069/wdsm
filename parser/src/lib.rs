@@ -13,7 +13,7 @@ pub use frontends::{LanguageFrontend, FrontendConfig, get_frontend};
 pub use codegen::generate_wit;
 pub use validation::validate;
 
-pub use config::{Config, parse_cfg};
+pub use config::{Config, parse_cfg, CapabilitiesConfig, EnvConfig, NetworkConfig};
 pub use type_converter::{json_to_val, val_to_json};
 
 use anyhow::{Context, Result};

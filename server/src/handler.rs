@@ -9,38 +9,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use wasmtime::component::*;
 use wasmtime::Store;
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
-use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
-
+use crate::context::ContextBuilder;
 use crate::runtime::ServerState;
 
 // health endpoint used for readiness checks
 pub async fn health() -> &'static str {
     "ok"
-}
-
-struct WasiState {
-    table: ResourceTable,
-    ctx: WasiCtx,
-    http: WasiHttpCtx,
-}
-
-impl WasiView for WasiState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.ctx
-    }
-}
-
-impl WasiHttpView for WasiState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-    fn ctx(&mut self) -> &mut WasiHttpCtx {
-        &mut self.http
-    }
 }
 
 #[derive(Deserialize)]
@@ -83,28 +57,11 @@ pub async fn execute_wasm(
     state: &ServerState,
     json_body: &Value,
 ) -> anyhow::Result<Value> {
-    let wasi_ctx = WasiCtxBuilder::new()
-        .inherit_stdio()
-        .inherit_env()
-        .inherit_network()
-        .allow_ip_name_lookup(true)
-        .allow_tcp(true)
-        .allow_udp(true)
-        .build();
-
-    let http = WasiHttpCtx::new();
-
-    let wasi_state = WasiState {
-        table: ResourceTable::new(),
-        ctx: wasi_ctx,
-        http,
-    };
-
+    let wasi_state = ContextBuilder::build_state(&state.config.capabilities)?;
     let mut store = Store::new(&state.engine, wasi_state);
 
     let mut linker = Linker::new(&state.engine);
-    wasmtime_wasi::add_to_linker_async(&mut linker)?;
-    wasmtime_wasi_http::add_only_http_to_linker_async(&mut linker)?;
+    ContextBuilder::configure_linker(&mut linker, &state.config.capabilities)?;
 
     let instance = linker
         .instantiate_async(&mut store, &state.component)

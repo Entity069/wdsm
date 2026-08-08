@@ -35,6 +35,16 @@ mod tests {
                 [("request_catcher".to_string(), "string".to_string())].into_iter().collect(),
             ],
             return_type: "string".to_string(),
+            capabilities: parser::CapabilitiesConfig {
+                stdio: true,
+                network: parser::NetworkConfig {
+                    http: true,
+                    tcp: true,
+                    udp: false,
+                    dns: true,
+                },
+                ..Default::default()
+            },
         };
 
         let state = ServerState {
@@ -82,6 +92,16 @@ mod tests {
                 [("request_catcher".to_string(), "string".to_string())].into_iter().collect(),
             ],
             return_type: "string".to_string(),
+            capabilities: parser::CapabilitiesConfig {
+                stdio: true,
+                network: parser::NetworkConfig {
+                    http: true,
+                    tcp: true,
+                    udp: false,
+                    dns: true,
+                },
+                ..Default::default()
+            },
         };
 
         let state = ServerState {
