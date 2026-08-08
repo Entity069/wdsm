@@ -1,0 +1,45 @@
+name: Compile Hello Example
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  compile:
+    name: Compile Stage (hello example)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install jco
+        run: npm install -g @bytecodealliance/jco
+
+      - name: Cache Cargo registry and build artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build wdsm CLI
+        run: cargo build --release --bin wdsm
+
+      - name: Compile Hello Example WIT and WASM
+        run: |
+          mkdir -p examples/hello/.wdsm
+          cargo run --release -p cli -- deploy --config examples/hello/config.yml &
+          PID=$!
+          sleep 5
+          kill $PID || true
+          test -f examples/hello/.wdsm/interface.wit
+          test -f examples/hello/.wdsm/function.wasm
