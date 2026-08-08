@@ -53,6 +53,14 @@ curl "http://127.0.0.1:3001/add?a=69.0&b=0.420"
 ```
 
 
+3) Networking Example
+
+```bash
+wdsm deploy --config examples/ts/net/config.yml
+
+curl -X POST http://127.0.0.1:3005/net -H "Content-Type: application/json" -d '{"msg": "Hello WASI!", "request_catcher": "heyjude"}'
+```
+
 ## Configuration File
 
 Below is an example of config file
@@ -72,11 +80,15 @@ return_type: string
 
 Supported basic types: `string|str`, `int|i32`, `i64`, `float|f32`, `f64`, `boolean|bool`.
 
+## Features
+
+- WASI networking & HTTP support enabled for outbound requests (`fetch` / HTTP client).
+
 ## Limitations
 
 - very much limited
-- no WASI modules
 
 ## License
 
 See [LICENSE](./LICENSE).
+
