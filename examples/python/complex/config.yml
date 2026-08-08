@@ -1,0 +1,11 @@
+name: complex-py
+language: python
+entrypoint: complex.py
+entrypoint_function: process_users
+port: 3013
+endpoint: /process-users
+method: POST
+payload:
+  - users: list
+  - require_active: bool
+return_type: string

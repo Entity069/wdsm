@@ -1,0 +1,10 @@
+name: hello-py
+language: python
+entrypoint: hello.py
+entrypoint_function: hello
+port: 3010
+endpoint: /hello
+method: GET
+payload:
+  - name: string
+return_type: string

@@ -1,0 +1,11 @@
+name: add-py
+language: python
+entrypoint: add.py
+entrypoint_function: add
+port: 3011
+endpoint: /add
+method: GET
+payload:
+  - a: f32
+  - b: f32
+return_type: f32
