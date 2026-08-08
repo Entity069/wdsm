@@ -1,0 +1,5 @@
+package wdsm:hello-py;
+
+world hello-py {
+  export hello: func(name: string) -> string;
+}
