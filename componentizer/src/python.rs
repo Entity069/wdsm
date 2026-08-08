@@ -30,26 +30,39 @@ pub fn componentize(
         .and_then(|s| s.to_str())
         .context("Invalid Python file name")?;
 
-    // WIT directory containing interface.wit
+    // WIT directory containing interface.wit — must be absolute since we change CWD
     let wit_dir = wit_file
         .parent()
         .context("WIT file has no parent directory")?;
+    let wit_dir_abs = wit_dir
+        .canonicalize()
+        .with_context(|| format!("WIT directory not found: {}", wit_dir.display()))?;
+
+    // Absolute output path — also needs to be absolute after CWD change
+    let output_abs = output_wasm
+        .canonicalize()
+        .unwrap_or_else(|_| {
+            // File doesn't exist yet; make it absolute relative to current working dir
+            std::env::current_dir()
+                .unwrap_or_default()
+                .join(output_wasm)
+        });
 
     // Python source directory (componentize-py searches here for the module)
     let py_dir = py_file
         .parent()
         .context("Python file has no parent directory")?;
 
-    // componentize-py -d <wit_dir> -w <world> componentize <module> -o <output>
+    // componentize-py -d <wit_dir_abs> -w <world> componentize <module> -o <output_abs>
     let output = Command::new("componentize-py")
         .arg("-d")
-        .arg(wit_dir)
+        .arg(&wit_dir_abs)
         .arg("-w")
         .arg(world)
         .arg("componentize")
         .arg(module_name)
         .arg("-o")
-        .arg(output_wasm)
+        .arg(&output_abs)
         .current_dir(py_dir)
         .output()
         .context("Failed to execute componentize-py")?;
