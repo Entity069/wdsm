@@ -213,8 +213,9 @@ fn parse_functions(
 
     while i < lines.len() {
         let line = lines[i];
-        // Only top-level `def` (no leading whitespace)
-        if !line.starts_with("def ") {
+        let trimmed = line.trim();
+        // Match `def` functions (top-level or inside WitWorld class)
+        if !trimmed.starts_with("def ") {
             i += 1;
             continue;
         }
