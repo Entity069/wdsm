@@ -63,26 +63,40 @@ curl -X POST http://127.0.0.1:3005/net -H "Content-Type: application/json" -d '{
 
 ## Configuration File
 
-Below is an example of config file
+Below is an example of a configuration file with optional WASI capabilities:
 
 ```yaml
-name: hello
-language: javascript
-entrypoint: hello.js
-entrypoint_function: hello
-port: 3001
-endpoint: /hello
-method: GET
+name: net
+language: typescript
+entrypoint: net.ts
+entrypoint_function: net
+port: 3005
+endpoint: /net
+method: POST
 payload:
-	- name: string
+  - msg: string
+  - request_catcher: string
 return_type: string
+
+capabilities:
+  stdio: true            # Inherit stdio for logging (default: true)
+  env:
+    inherit: false       # Inherit host environment variables (default: false)
+    vars:                # Explicit environment variables to expose
+      - API_KEY
+  network:               # WASI network capabilities (default: false for security)
+    http: true           # Enable WASI HTTP outbound client
+    tcp: true            # Allow TCP sockets
+    udp: false           # Allow UDP sockets
+    dns: true            # Allow DNS resolution
 ```
 
 Supported basic types: `string|str`, `int|i32`, `i64`, `float|f32`, `f64`, `boolean|bool`.
 
 ## Features
 
-- WASI networking & HTTP support enabled for outbound requests (`fetch` / HTTP client).
+- WASI capability sandboxing configurable per endpoint via `capabilities` in `config.yml`.
+- Outbound WASI networking & HTTP client support (`fetch` in JS/TS, `urllib`/HTTP in Python) enabled declaratively via `capabilities.network.http`.
 
 ## Limitations
 
@@ -91,4 +105,5 @@ Supported basic types: `string|str`, `int|i32`, `i64`, `float|f32`, `f64`, `bool
 ## License
 
 See [LICENSE](./LICENSE).
+
 
