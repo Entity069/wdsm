@@ -107,24 +107,33 @@ async fn execute_wasm(
         .await?;
 
     let func_name = &state.config.entrypoint_function;
-    let func = instance.get_func(&mut store, func_name)
-        .or_else(|| instance.get_func(&mut store, &to_kebab(func_name)))
-        .or_else(|| {
-            // Search exports inside exported interface instances if any
-            for (name, item) in instance.exports(&mut store) {
-                if let ComponentItem::ComponentInstance(inst) = item {
-                    if let Some(f) = inst.get_func(&mut store, func_name)
-                        .or_else(|| inst.get_func(&mut store, &to_kebab(func_name))) {
-                        return Some(f);
-                    }
-                }
-            }
-            None
-        })
-        .ok_or_else(|| {
-            let export_names: Vec<String> = instance.exports(&mut store).map(|(n, _)| n.to_string()).collect();
-            anyhow::anyhow!("Function {} not found. Available component exports: {:?}", func_name, export_names)
-        })?;
+    let kebab_name = to_kebab(func_name);
+    let world_name = &state.config.name;
+
+    let candidates = vec![
+        func_name.clone(),
+        kebab_name.clone(),
+        format!("{}/{}", world_name, func_name),
+        format!("{}/{}", world_name, kebab_name),
+        format!("wdsm:{}/{}", world_name, func_name),
+        format!("wdsm:{}/{}", world_name, kebab_name),
+    ];
+
+    let mut found_func = None;
+    for cand in &candidates {
+        if let Some(f) = instance.get_func(&mut store, cand) {
+            found_func = Some(f);
+            break;
+        }
+    }
+
+    let func = found_func.ok_or_else(|| {
+        anyhow::anyhow!(
+            "Function {} not found in component. Tried candidates: {:?}",
+            func_name,
+            candidates
+        )
+    })?;
 
     // get parameter types from the wasm component
     let param_types: Box<[types::Type]> = func.params(&store);
