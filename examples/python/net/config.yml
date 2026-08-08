@@ -1,0 +1,11 @@
+name: net-py
+language: python
+entrypoint: net.py
+entrypoint_function: net
+port: 3015
+endpoint: /net
+method: POST
+payload:
+  - msg: string
+  - request_catcher: string
+return_type: string
