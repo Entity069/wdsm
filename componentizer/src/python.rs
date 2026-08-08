@@ -5,9 +5,15 @@ use std::process::Command;
 /// Componentize a Python source file into a WASM component using componentize-py.
 /// Requires `componentize-py` to be installed: `pip install componentize-py`
 ///
-/// The world name is derived from the Python file stem by convention — e.g.,
-/// `hello.py` uses world `hello`. This matches how the WIT generator names worlds.
-pub fn componentize(py_file: &Path, wit_file: &Path, output_wasm: &Path) -> Result<()> {
+/// The `world` argument is the WIT world name (e.g. "hello-py"). The Python module
+/// name (file stem) must differ from the world name — componentize-py generates a
+/// module with the world name, so app module and generated bindings can't share it.
+pub fn componentize(
+    py_file: &Path,
+    wit_file: &Path,
+    output_wasm: &Path,
+    world: &str,
+) -> Result<()> {
     // Check if componentize-py is installed
     Command::new("componentize-py")
         .arg("--version")
@@ -18,27 +24,28 @@ pub fn componentize(py_file: &Path, wit_file: &Path, output_wasm: &Path) -> Resu
             )
         })?;
 
-    // Derive module name from file stem (e.g. hello.py -> "hello")
+    // Module name = file stem (e.g. "hello" from hello.py)
     let module_name = py_file
         .file_stem()
         .and_then(|s| s.to_str())
         .context("Invalid Python file name")?;
 
-    // WIT world name is the module name (kebab-cased by convention from our generator)
-    // componentize-py -d <wit_dir> -w <world> componentize <module> -o <output>
+    // WIT directory containing interface.wit
     let wit_dir = wit_file
         .parent()
         .context("WIT file has no parent directory")?;
 
+    // Python source directory (componentize-py searches here for the module)
     let py_dir = py_file
         .parent()
         .context("Python file has no parent directory")?;
 
+    // componentize-py -d <wit_dir> -w <world> componentize <module> -o <output>
     let output = Command::new("componentize-py")
         .arg("-d")
         .arg(wit_dir)
         .arg("-w")
-        .arg(module_name)
+        .arg(world)
         .arg("componentize")
         .arg(module_name)
         .arg("-o")

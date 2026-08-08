@@ -18,7 +18,7 @@ pub async fn execute(config_path: &str) -> Result<()> {
     std::fs::write(&wit_file, &wit_content).context("Failed to write WIT file")?;
 
     let wasm_file = wdsm_dir.join("function.wasm");
-    componentizer::componentize(&config.language, &source_file, &wit_file, &wasm_file)
+    componentizer::componentize(&config.language, &source_file, &wit_file, &wasm_file, &config.name)
         .context("Failed to compile to WASM")?;
 
     let deployment = server::deploy(config.clone(), wasm_file)
