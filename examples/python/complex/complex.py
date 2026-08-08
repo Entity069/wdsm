@@ -6,7 +6,7 @@ from typing import Optional
 class ChangeMetadata:
     author: str
     timestamp: float
-    flags: Optional[list[str]]
+    labels: Optional[list[str]]
 
 
 @dataclass
