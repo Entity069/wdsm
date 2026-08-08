@@ -1,7 +1,7 @@
 interface ChangeMetadata {
     author: string;
     timestamp: number;
-    flags?: string[];
+    labels?: string[];
 }
 
 interface FieldDelta {
