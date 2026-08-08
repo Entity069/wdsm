@@ -2,12 +2,11 @@ name: complex
 method: POST
 language: typescript
 entrypoint: complex.ts
-entrypoint_function: processUsers
+entrypoint_function: processDiff
 
 payload:
-  - users: list
-  - requireActive: boolean
+  - report: DiffReport
 
-return_type: ProcessSummary
+return_type: DiffSummary
 port: 3001
 endpoint: /complex

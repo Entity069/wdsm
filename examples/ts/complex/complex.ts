@@ -1,44 +1,55 @@
-interface GeoLocation {
-    lat: number;
-    lng: number;
+interface ChangeMetadata {
+    author: string;
+    timestamp: number;
+    flags?: string[];
 }
 
-interface Address {
-    street: string;
-    city: string;
-    geo: GeoLocation;
+interface FieldDelta {
+    fieldName: string;
+    oldValue?: string;
+    newValue?: string;
 }
 
-interface UserProfile {
-    id: number;
-    username: string;
-    isActive: boolean;
-    address: Address;
-    tags?: string[];
+interface NodeDiff {
+    nodeId: string;
+    path: string[];
+    deltas: FieldDelta[];
 }
 
-interface ProcessSummary {
-    totalUsers: number;
-    activeUsers: number;
-    primaryCity: string;
-    details: string[];
+interface DiffReport {
+    reportId: string;
+    nodes: NodeDiff[];
+    metadata: ChangeMetadata;
 }
 
-export function processUsers(users: UserProfile[], requireActive: boolean): ProcessSummary {
-    const totalUsers = users.length;
-    const activeUsers = users.filter(u => u.isActive);
+interface DiffSummary {
+    summaryId: string;
+    totalNodes: number;
+    totalDeltas: number;
+    primaryAuthor: string;
+    affectedPaths: string[];
+    sampleDelta: FieldDelta;
+}
 
-    const primaryCity = users.length > 0 ? users[0].address.city : "Unknown";
+export function processDiff(report: DiffReport): DiffSummary {
+    let totalDeltas = 0;
+    const affectedPaths: string[] = [];
+    let firstDelta: FieldDelta = { fieldName: "none" };
 
-    const details = users.map(u => {
-        const tagCount = u.tags ? u.tags.length : 0;
-        return `${u.username} (ID: ${u.id}, City: ${u.address.city}, Lat: ${u.address.geo.lat}, Lng: ${u.address.geo.lng}, Tags: ${tagCount})`;
-    });
+    for (const node of report.nodes) {
+        totalDeltas += node.deltas.length;
+        affectedPaths.push(node.path.join("."));
+        if (node.deltas.length > 0 && firstDelta.fieldName === "none") {
+            firstDelta = node.deltas[0];
+        }
+    }
 
     return {
-        totalUsers,
-        activeUsers: activeUsers.length,
-        primaryCity,
-        details
+        summaryId: `summary-${report.reportId}`,
+        totalNodes: report.nodes.length,
+        totalDeltas,
+        primaryAuthor: report.metadata.author,
+        affectedPaths,
+        sampleDelta: firstDelta
     };
 }
