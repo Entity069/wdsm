@@ -17,8 +17,17 @@ pub struct Config {
 }
 
 pub fn parse_cfg(path: &str) -> Result<Config> {
-    let content = fs::read_to_string(path).with_context(|| format!("Failed to read config file: {}", path))?;
-    let cfg: Config = serde_yaml::from_str(&content).with_context(|| format!("Failed to parse YAML config: {}", path))?;
-    
+    let p = std::path::Path::new(path);
+    let actual_path = if p.is_dir() {
+        p.join("config.yml")
+    } else {
+        p.to_path_buf()
+    };
+
+    let content = fs::read_to_string(&actual_path)
+        .with_context(|| format!("Failed to read config file: {}", actual_path.display()))?;
+    let cfg: Config = serde_yaml::from_str(&content)
+        .with_context(|| format!("Failed to parse YAML config: {}", actual_path.display()))?;
+
     Ok(cfg)
 }

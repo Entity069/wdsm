@@ -107,9 +107,33 @@ async fn execute_wasm(
         .await?;
 
     let func_name = &state.config.entrypoint_function;
-    let func = instance.get_func(&mut store, func_name)
-        .or_else(|| instance.get_func(&mut store, &to_kebab(func_name)))
-        .ok_or_else(|| anyhow::anyhow!("Function {} not found", func_name))?;
+    let kebab_name = to_kebab(func_name);
+    let world_name = &state.config.name;
+
+    let candidates = vec![
+        func_name.clone(),
+        kebab_name.clone(),
+        format!("{}/{}", world_name, func_name),
+        format!("{}/{}", world_name, kebab_name),
+        format!("wdsm:{}/{}", world_name, func_name),
+        format!("wdsm:{}/{}", world_name, kebab_name),
+    ];
+
+    let mut found_func = None;
+    for cand in &candidates {
+        if let Some(f) = instance.get_func(&mut store, cand) {
+            found_func = Some(f);
+            break;
+        }
+    }
+
+    let func = found_func.ok_or_else(|| {
+        anyhow::anyhow!(
+            "Function {} not found in component. Tried candidates: {:?}",
+            func_name,
+            candidates
+        )
+    })?;
 
     // get parameter types from the wasm component
     let param_types: Box<[types::Type]> = func.params(&store);
@@ -174,16 +198,6 @@ async fn execute_wasm(
 }
 
 fn to_kebab(s: &str) -> String {
-    let mut result = std::string::String::with_capacity(s.len() + 4);
-    for (i, c) in s.chars().enumerate() {
-        if c.is_uppercase() {
-            if i > 0 {
-                result.push('-');
-            }
-            result.push(c.to_ascii_lowercase());
-        } else {
-            result.push(c);
-        }
-    }
-    result
+    use heck::ToKebabCase;
+    s.to_kebab_case()
 }

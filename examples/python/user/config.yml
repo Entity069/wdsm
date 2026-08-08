@@ -1,0 +1,12 @@
+name: user-py
+language: python
+entrypoint: user.py
+entrypoint_function: create_user
+port: 3012
+endpoint: /create-user
+method: POST
+payload:
+  - name: string
+  - email: string
+  - age: f64
+return_type: User

@@ -1,0 +1,10 @@
+name: sudoku-py
+language: python
+entrypoint: sudoku.py
+entrypoint_function: solve
+port: 3014
+endpoint: /solve
+method: GET
+payload:
+  - board_str: string
+return_type: string

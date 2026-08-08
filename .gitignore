@@ -1,2 +1,4 @@
 /target
-/examples/*/.wdsm
+.wdsm
+__pycache__
+*.pyc

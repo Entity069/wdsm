@@ -1,0 +1,10 @@
+name: complex-py
+language: python
+entrypoint: complex.py
+entrypoint_function: process_diff
+port: 3013
+endpoint: /process-users
+method: POST
+payload:
+  - report: DiffReport
+return_type: DiffSummary
