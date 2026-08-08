@@ -36,7 +36,7 @@ jobs:
 
       - name: Run Hello Server and Test Endpoint
         run: |
-          ./target/release/wdsm deploy --config examples/hello/config.yml &
+          ./target/release/wdsm deploy --config examples/ts/hello/config.yml &
           SERVER_PID=$!
           
           # Wait for server readiness
