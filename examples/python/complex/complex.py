@@ -3,50 +3,61 @@ from typing import Optional
 
 
 @dataclass
-class GeoLocation:
-    lat: float
-    lng: float
+class ChangeMetadata:
+    author: str
+    timestamp: float
+    flags: Optional[list[str]]
 
 
 @dataclass
-class Address:
-    street: str
-    city: str
-    geo: GeoLocation
+class FieldDelta:
+    field_name: str
+    old_value: Optional[str]
+    new_value: Optional[str]
 
 
 @dataclass
-class UserProfile:
-    id: float
-    username: str
-    is_active: bool
-    address: Address
-    tags: Optional[list[str]]
+class NodeDiff:
+    node_id: str
+    path: list[str]
+    deltas: list[FieldDelta]
 
 
 @dataclass
-class ProcessSummary:
-    total_users: float
-    active_users: float
-    primary_city: str
-    details: list[str]
+class DiffReport:
+    report_id: str
+    nodes: list[NodeDiff]
+    metadata: ChangeMetadata
+
+
+@dataclass
+class DiffSummary:
+    summary_id: str
+    total_nodes: float
+    total_deltas: float
+    primary_author: str
+    affected_paths: list[str]
+    sample_delta: FieldDelta
 
 
 class WitWorld:
-    def process_users(self, users: list[UserProfile], require_active: bool) -> ProcessSummary:
-        """Process nested user profiles and return a nested summary object."""
-        total = float(len(users))
-        active = [u for u in users if u.is_active]
-        primary_city = users[0].address.city if len(users) > 0 else "Unknown"
+    def process_diff(self, report: DiffReport) -> DiffSummary:
+        """Process a deeply nested DiffReport and return a DiffSummary."""
+        total_deltas = 0.0
+        affected_paths: list[str] = []
+        sample = FieldDelta(field_name="none", old_value=None, new_value=None)
 
-        details = [
-            f"{u.username} (ID: {u.id}, City: {u.address.city}, Lat: {u.address.geo.lat}, Lng: {u.address.geo.lng}, Tags: {len(u.tags or [])})"
-            for u in users
-        ]
+        for node in report.nodes:
+            total_deltas += float(len(node.deltas))
+            affected_paths.append(".".join(node.path))
+            if len(node.deltas) > 0 and sample.field_name == "none":
+                sample = node.deltas[0]
 
-        return ProcessSummary(
-            total_users=total,
-            active_users=float(len(active)),
-            primary_city=primary_city,
-            details=details,
+        return DiffSummary(
+            summary_id=f"summary-{report.report_id}",
+            total_nodes=float(len(report.nodes)),
+            total_deltas=total_deltas,
+            primary_author=report.metadata.author,
+            affected_paths=affected_paths,
+            sample_delta=sample,
         )
