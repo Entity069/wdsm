@@ -36,15 +36,15 @@ jobs:
 
       - name: Compile Hello Example WIT and WASM
         run: |
-          mkdir -p examples/hello/.wdsm
-          cargo run --release -p cli -- deploy --config examples/hello/config.yml &
+          mkdir -p examples/ts/hello/.wdsm
+          cargo run --release -p cli -- deploy --config examples/ts/hello/config.yml &
           PID=$!
           for _ in {1..60}; do
-            if test -f examples/hello/.wdsm/interface.wit && test -f examples/hello/.wdsm/function.wasm; then
+            if test -f examples/ts/hello/.wdsm/interface.wit && test -f examples/ts/hello/.wdsm/function.wasm; then
               break
             fi
             sleep 1
           done
           kill $PID || true
-          test -f examples/hello/.wdsm/interface.wit
-          test -f examples/hello/.wdsm/function.wasm
+          test -f examples/ts/hello/.wdsm/interface.wit
+          test -f examples/ts/hello/.wdsm/function.wasm
