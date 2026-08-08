@@ -9,3 +9,9 @@ payload:
   - msg: string
   - request_catcher: string
 return_type: string
+capabilities:
+  stdio: true
+  network:
+    http: true
+    tcp: true
+    dns: true
