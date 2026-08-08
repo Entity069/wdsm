@@ -1,3 +1,4 @@
+pub mod python;
 pub mod typescript;
 
 use crate::ir::WitIR;
@@ -18,6 +19,7 @@ pub struct FrontendConfig {
 pub fn get_frontend(language: &str) -> Option<Box<dyn LanguageFrontend>> {
     match language {
         "typescript" => Some(Box::new(typescript::TypeScriptFrontend)),
+        "python" => Some(Box::new(python::PythonFrontend)),
         _ => None,
     }
 }

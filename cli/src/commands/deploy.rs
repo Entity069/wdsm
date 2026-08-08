@@ -1,9 +1,7 @@
 use anyhow::{anyhow, Context, Result};
-use jco::componentize;
 use std::path::Path;
 
 pub async fn execute(config_path: &str) -> Result<()> {
-
     let config = parser::parse_cfg(config_path).context("Failed to parse config")?;
 
     let config_file = Path::new(config_path);
@@ -12,22 +10,31 @@ pub async fn execute(config_path: &str) -> Result<()> {
     let wdsm_dir = project_dir.join(".wdsm");
     std::fs::create_dir_all(&wdsm_dir).context("Failed to create .wdsm directory")?;
 
-    let js_file = project_dir.join(&config.entrypoint);
-    let wit_content = parser::gen_wit(&config, project_dir).context("Failed to generate WIT file")?;
+    let source_file = project_dir.join(&config.entrypoint);
+    let wit_content =
+        parser::gen_wit(&config, project_dir).context("Failed to generate WIT file")?;
 
     let wit_file = wdsm_dir.join("interface.wit");
-    std::fs::write(&wit_file, wit_content).context("Failed to write WIT file")?;
-    
+    std::fs::write(&wit_file, &wit_content).context("Failed to write WIT file")?;
 
     let wasm_file = wdsm_dir.join("function.wasm");
-    componentize(&js_file, &wit_file, &wasm_file).context("Failed to compile to WASM")?;
+    componentizer::componentize(&config.language, &source_file, &wit_file, &wasm_file)
+        .context("Failed to compile to WASM")?;
 
-    let deployment = server::deploy(config.clone(), wasm_file).await.context("Failed to start server")?;
+    let deployment = server::deploy(config.clone(), wasm_file)
+        .await
+        .context("Failed to start server")?;
 
     // before registering, wait if the server is actually running
     // need to make deployment atomic in order to avoid undeployed entries in registry
-    if let Err(e) = health_check(config.port, 3_000).await
-        .with_context(|| format!("[i] Server on port {} did not become ready in time", config.port))
+    if let Err(e) = health_check(config.port, 3_000)
+        .await
+        .with_context(|| {
+            format!(
+                "[i] Server on port {} did not become ready in time",
+                config.port
+            )
+        })
     {
         let _ = server::stop(&deployment.id).await;
         return Err(e);
@@ -35,9 +42,13 @@ pub async fn execute(config_path: &str) -> Result<()> {
 
     registry::register(deployment.clone()).context("[!] Failed to register deployment")?;
 
-    tokio::signal::ctrl_c().await.context("Failed to listen for Ctrl+C")?;
+    tokio::signal::ctrl_c()
+        .await
+        .context("Failed to listen for Ctrl+C")?;
 
-    server::stop(&deployment.id).await.context("Failed to stop server")?;
+    server::stop(&deployment.id)
+        .await
+        .context("Failed to stop server")?;
 
     registry::unregister(&deployment.id).context("Failed to unregister deployment")?;
 
@@ -49,7 +60,8 @@ async fn health_check(port: u16, timeout_ms: u64) -> Result<()> {
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_millis(500))
-        .build().context("Failed to build HTTP client")?;
+        .build()
+        .context("Failed to build HTTP client")?;
 
     let url = format!("http://127.0.0.1:{}/__health", port);
     let start = Instant::now();
