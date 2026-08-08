@@ -8,4 +8,4 @@ method: POST
 payload:
   - users: list
   - require_active: bool
-return_type: string
+return_type: ProcessSummary
