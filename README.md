@@ -89,6 +89,10 @@ capabilities:
     tcp: true            # Allow TCP sockets
     udp: false           # Allow UDP sockets
     dns: true            # Allow DNS resolution
+  filesystem:            # WASI filesystem volume
+    - host: "./data"
+      guest: "/data"
+      read_only: true
 ```
 
 Supported basic types: `string|str`, `int|i32`, `i64`, `float|f32`, `f64`, `boolean|bool`.
