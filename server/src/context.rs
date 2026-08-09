@@ -31,7 +31,6 @@ impl WasiHttpView for WasiState {
 pub struct ContextBuilder;
 
 impl ContextBuilder {
-    /// Dynamically build the WasiState context based on configured capabilities.
     pub fn build_state(cap: &CapabilitiesConfig) -> Result<WasiState> {
         let mut builder = WasiCtxBuilder::new();
 
@@ -62,6 +61,18 @@ impl ContextBuilder {
             builder.allow_udp(true);
         }
 
+        for vol in &cap.filesystem {
+            let (dir_perms, file_perms) = if vol.read_only {
+                (wasmtime_wasi::DirPerms::READ, wasmtime_wasi::FilePerms::READ)
+            } else {
+                (wasmtime_wasi::DirPerms::all(), wasmtime_wasi::FilePerms::all())
+            };
+
+            if let Err(e) = builder.preopened_dir(&vol.host, &vol.guest, dir_perms, file_perms) {
+                eprintln!("[!] failed to preopen directory {}: {}", vol.host, e);
+            }
+        }
+
         let wasi_ctx = builder.build();
         let http = WasiHttpCtx::new();
 
@@ -72,7 +83,6 @@ impl ContextBuilder {
         })
     }
 
-    /// Dynamically register host linker bindings for active capabilities.
     pub fn configure_linker(
         linker: &mut Linker<WasiState>,
         cap: &CapabilitiesConfig,
@@ -83,10 +93,9 @@ impl ContextBuilder {
             wasmtime_wasi_http::add_only_http_to_linker_async(linker)?;
         }
 
-        // Extensible hook for custom proposal capabilities (e.g. wasi-nn, wasi-keyvalue)
         for (name, val) in &cap.custom {
             println!(
-                "[+] Dynamic capability context evaluated: {} -> {:?}",
+                "[+] dynamic capability context evaluated: {} -> {:?}",
                 name, val
             );
         }

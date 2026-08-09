@@ -18,6 +18,14 @@ pub struct Config {
     pub capabilities: CapabilitiesConfig,
 }
 
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct VolumeConfig {
+    pub host: String,
+    pub guest: String,
+    #[serde(default)]
+    pub read_only: bool,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct CapabilitiesConfig {
     #[serde(default = "default_stdio")]
@@ -26,6 +34,8 @@ pub struct CapabilitiesConfig {
     pub env: EnvConfig,
     #[serde(default)]
     pub network: NetworkConfig,
+    #[serde(default)]
+    pub filesystem: Vec<VolumeConfig>,
     #[serde(flatten)]
     pub custom: HashMap<String, serde_json::Value>,
 }
@@ -40,6 +50,7 @@ impl Default for CapabilitiesConfig {
             stdio: true,
             env: EnvConfig::default(),
             network: NetworkConfig::default(),
+            filesystem: Vec::new(),
             custom: HashMap::new(),
         }
     }
@@ -164,6 +175,36 @@ capabilities:
     }
 
     #[test]
+    fn test_parse_cfg_filesystem_capabilities() {
+        let yaml = r#"
+name: fs_test
+language: typescript
+entrypoint: fs.ts
+entrypoint_function: readData
+port: 3025
+endpoint: /fs
+method: GET
+payload: []
+return_type: string
+capabilities:
+  stdio: true
+  filesystem:
+    - host: "./data"
+      guest: "/data"
+      read_only: true
+    - host: "./tmp"
+      guest: "/tmp"
+      read_only: false
+"#;
+        let cfg: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(cfg.capabilities.filesystem.len(), 2);
+        assert_eq!(cfg.capabilities.filesystem[0].host, "./data");
+        assert_eq!(cfg.capabilities.filesystem[0].guest, "/data");
+        assert!(cfg.capabilities.filesystem[0].read_only);
+        assert!(!cfg.capabilities.filesystem[1].read_only);
+    }
+
+    #[test]
     fn test_parse_all_example_configs() {
         let example_paths = vec![
             "../examples/ts/hello/config.yml",
@@ -172,12 +213,14 @@ capabilities:
             "../examples/ts/sudoku/config.yml",
             "../examples/ts/complex/config.yml",
             "../examples/ts/net/config.yml",
+            "../examples/ts/fs/config.yml",
             "../examples/python/hello/config.yml",
             "../examples/python/add/config.yml",
             "../examples/python/user/config.yml",
             "../examples/python/sudoku/config.yml",
             "../examples/python/complex/config.yml",
             "../examples/python/net/config.yml",
+            "../examples/python/fs/config.yml",
         ];
 
         for path in example_paths {
