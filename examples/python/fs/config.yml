@@ -1,0 +1,17 @@
+name: fs-py
+language: python
+entrypoint: fs.py
+entrypoint_function: read_file
+port: 3017
+endpoint: /fs
+method: GET
+payload:
+  - filename: string
+return_type: string
+
+capabilities:
+  stdio: true
+  filesystem:
+    - host: "./examples/python/fs/data"
+      guest: "/data"
+      read_only: true

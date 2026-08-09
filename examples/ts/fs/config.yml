@@ -1,0 +1,17 @@
+name: fs
+language: typescript
+entrypoint: fs.ts
+entrypoint_function: readFile
+port: 3006
+endpoint: /fs
+method: GET
+payload:
+  - filename: string
+return_type: string
+
+capabilities:
+  stdio: true
+  filesystem:
+    - host: "./examples/ts/fs/data"
+      guest: "/data"
+      read_only: true
