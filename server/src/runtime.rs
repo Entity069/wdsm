@@ -25,10 +25,12 @@ pub async fn start_server(config: Config, wasm_file: PathBuf) -> Result<FnServic
 
     let mut wasm_config = WasmConfig::new();
     wasm_config.wasm_component_model(true);
-    wasm_config.async_support(true);
+    // wasm_config.async_support(true);
     
     let engine = Engine::new(&wasm_config)?;
-    let component = Component::from_file(&engine, &wasm_file).context("Failed to load WASM component")?;
+    let component = Component::from_file(&engine, &wasm_file)
+        .map_err(anyhow::Error::from)
+        .context("Failed to load WASM component")?;
 
     let state = Arc::new(ServerState {
         engine,

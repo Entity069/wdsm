@@ -17,7 +17,6 @@ mod tests {
 
         let mut wasm_config = WasmConfig::new();
         wasm_config.wasm_component_model(true);
-        wasm_config.async_support(true);
 
         let engine = Engine::new(&wasm_config).unwrap();
         let component = Component::from_file(&engine, &wasm_file).unwrap();
@@ -74,7 +73,6 @@ mod tests {
 
         let mut wasm_config = WasmConfig::new();
         wasm_config.wasm_component_model(true);
-        wasm_config.async_support(true);
 
         let engine = Engine::new(&wasm_config).unwrap();
         let component = Component::from_file(&engine, &wasm_file).unwrap();

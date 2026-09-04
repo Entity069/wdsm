@@ -1,8 +1,8 @@
 use anyhow::Result;
 use parser::CapabilitiesConfig;
 use wasmtime::component::{Linker, ResourceTable};
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiView};
-use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpView};
+use wasmtime_wasi::{WasiCtx, WasiCtxBuilder, WasiCtxView, WasiView, FsPerms};
+use wasmtime_wasi_http::{WasiHttpCtx, WasiHttpCtxView, WasiHttpView};
 
 pub struct WasiState {
     pub table: ResourceTable,
@@ -11,20 +11,21 @@ pub struct WasiState {
 }
 
 impl WasiView for WasiState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.ctx
+    fn ctx(&mut self) -> WasiCtxView<'_> {
+        WasiCtxView {
+            ctx: &mut self.ctx,
+            table: &mut self.table,
+        }
     }
 }
 
 impl WasiHttpView for WasiState {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-    fn ctx(&mut self) -> &mut WasiHttpCtx {
-        &mut self.http
+    fn http(&mut self) -> WasiHttpCtxView<'_> {
+        WasiHttpCtxView {
+            ctx: &mut self.http,
+            table: &mut self.table,
+            hooks: Default::default(),
+        }
     }
 }
 
@@ -62,13 +63,13 @@ impl ContextBuilder {
         }
 
         for vol in &cap.filesystem {
-            let (dir_perms, file_perms) = if vol.read_only {
-                (wasmtime_wasi::DirPerms::READ, wasmtime_wasi::FilePerms::READ)
+            let perms = if vol.read_only {
+                FsPerms::ReadOnly
             } else {
-                (wasmtime_wasi::DirPerms::all(), wasmtime_wasi::FilePerms::all())
+                FsPerms::ReadWrite
             };
 
-            if let Err(e) = builder.preopened_dir(&vol.host, &vol.guest, dir_perms, file_perms) {
+            if let Err(e) = builder.preopened_dir(&vol.host, &vol.guest, perms) {
                 eprintln!("[!] failed to preopen directory {}: {}", vol.host, e);
             }
         }
@@ -87,10 +88,10 @@ impl ContextBuilder {
         linker: &mut Linker<WasiState>,
         cap: &CapabilitiesConfig,
     ) -> Result<()> {
-        wasmtime_wasi::add_to_linker_async(linker)?;
+        wasmtime_wasi::p2::add_to_linker_async(linker)?;
 
         if cap.network.http {
-            wasmtime_wasi_http::add_only_http_to_linker_async(linker)?;
+            wasmtime_wasi_http::p2::add_only_http_to_linker_async(linker)?;
         }
 
         for (name, val) in &cap.custom {

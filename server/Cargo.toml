@@ -12,9 +12,9 @@ serde_json.workspace = true
 uuid.workspace = true
 heck = "0.5"
 
-wasmtime = { version = "26", features = ["component-model", "async"] }
-wasmtime-wasi = "26"
-wasmtime-wasi-http = "26"
+wasmtime = { version = "48", features = ["component-model", "async"] }
+wasmtime-wasi = "48"
+wasmtime-wasi-http = "48"
 
 parser = { path = "../parser" }
 logger = { path = "../logger" }

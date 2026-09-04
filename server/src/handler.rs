@@ -97,7 +97,8 @@ pub async fn execute_wasm(
     })?;
 
     // get parameter types from the wasm component
-    let param_types: Box<[types::Type]> = func.params(&store);
+    let func_ty = func.ty(&store);
+    let param_types: Vec<types::Type> = func_ty.params().map(|(_, ty)| ty).collect();
 
     // get param names from config payload tp preserve ordering
     let param_names: Vec<String> = state.config.payload.iter()
@@ -136,7 +137,7 @@ pub async fn execute_wasm(
         param_values.push(val);
     }
 
-    let result_types = func.results(&store);
+    let result_types: Vec<types::Type> = func.ty(&store).results().collect();
     let mut results = vec![Val::Bool(false); result_types.len()];
 
     func.call_async(&mut store, &param_values, &mut results).await?;
